@@ -14,7 +14,7 @@
 
 - Node.js 18 以上、`python3`、`ffmpeg`（macOS：`brew install node ffmpeg`）
 - 一个 Chrome 系浏览器：Google Chrome、Edge、Chromium 都行
-- 配好的口播和它的逐字时间：用 [成峰 Fish 配音](https://github.com/Agentchengfeng/chengfeng-videocut-fish) 配的，或自己录、用 [成峰剪口播](https://github.com/Agentchengfeng/chengfeng-videocut-koubo) 剪的都能直接用；还没配音也能按估的时间先出无声预览
+- 配好的口播和它的逐字时间：用 [成峰 Fish 配音](https://github.com/Agentchengfeng/chengfeng-video-fish) 配的，或自己录、用 [成峰剪口播](https://github.com/Agentchengfeng/chengfeng-video-koubo) 剪的都能直接用；还没配音也能按估的时间先出无声预览
 
 ## 安装
 
