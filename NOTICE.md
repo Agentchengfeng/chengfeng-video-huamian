@@ -16,12 +16,11 @@ Official accounts:
 Original source:
 
 ```text
-https://github.com/Agentchengfeng/chengfeng-video-styles
+https://github.com/Agentchengfeng/chengfeng-videocut-huamian
 ```
+
+Formerly published as https://github.com/Agentchengfeng/chengfeng-video-styles (merged in 2026-11).
 
 Please keep this attribution when using, copying, translating, redistributing, or adapting this project.
 
-This repository is licensed under the Apache License, Version 2.0.
-When redistributing this project or derivative works, keep the LICENSE file
-and a readable copy of this NOTICE attribution, as required by Apache-2.0
-Section 4.
+This repository is licensed under the Apache License, Version 2.0. When redistributing this project or derivative works, keep the LICENSE file and a readable copy of this NOTICE attribution, as required by Apache-2.0 Section 4.

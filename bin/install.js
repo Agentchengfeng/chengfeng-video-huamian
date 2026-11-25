@@ -4,141 +4,164 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { spawnSync } = require('child_process');
 
-const HOME = process.env.CHENGFENG_VIDEO_STYLES_HOME || os.homedir();
+const HOME = process.env.CHENGFENG_VIDEOCUT_HUAMIAN_HOME || os.homedir();
+// 0.4.0 起 chengfeng-video-styles 并进来了：装的时候把旧的备份后拿掉。
+const OLD_NAME = 'chengfeng-video-styles';
 const PKG_ROOT = path.resolve(__dirname, '..');
-const PKG_SKILLS = path.join(PKG_ROOT, 'skills');
-const CLAUDE_SKILLS = path.join(HOME, '.claude', 'skills');
-const CODEX_SKILLS = path.join(HOME, '.codex', 'skills');
-const SKILLS = ['chengfeng-video-styles'];
+const SKILL_NAME = 'chengfeng-videocut-huamian';
+const SOURCE = path.join(PKG_ROOT, 'skills', SKILL_NAME);
+const PRIMARY_SKILLS = path.join(HOME, '.claude', 'skills');
+const COMPAT_SKILLS = path.join(HOME, '.codex', 'skills');
+const DESTINATION = path.join(PRIMARY_SKILLS, SKILL_NAME);
+const LINK = path.join(COMPAT_SKILLS, SKILL_NAME);
+const TOOL_HOME = path.join(HOME, '.chengfeng-videocut-huamian');
 
-const log = (s = '') => process.stdout.write(s + '\n');
+const log = (message = '') => process.stdout.write(`${message}\n`);
+const timestamp = () => new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');
 
-function timestamp() {
-  return new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');
-}
-
-function copyDir(src, dst) {
-  fs.mkdirSync(dst, { recursive: true });
-  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-    const s = path.join(src, entry.name);
-    const d = path.join(dst, entry.name);
-    if (entry.isDirectory()) {
-      copyDir(s, d);
-    } else if (entry.isSymbolicLink()) {
-      try { fs.rmSync(d, { force: true, recursive: true }); } catch (_) {}
-      fs.symlinkSync(fs.readlinkSync(s), d);
-    } else {
-      fs.copyFileSync(s, d);
-      try { fs.chmodSync(d, fs.statSync(s).mode); } catch (_) {}
-    }
+function copyDir(source, destination) {
+  fs.mkdirSync(destination, { recursive: true });
+  for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
+    if (entry.name === '__pycache__') continue;
+    const from = path.join(source, entry.name);
+    const to = path.join(destination, entry.name);
+    if (entry.isDirectory()) copyDir(from, to);
+    else fs.copyFileSync(from, to);
   }
 }
 
 function backupAndRemove(target, label) {
-  if (!fs.existsSync(target)) return null;
-  const backupDir = path.join(CLAUDE_SKILLS, '.backups');
-  fs.mkdirSync(backupDir, { recursive: true });
-  const backup = path.join(backupDir, `${label}-${timestamp()}`);
-  copyDir(target, backup);
+  if (!fs.existsSync(target) && !fs.lstatSync(target, { throwIfNoEntry: false })) return null;
+  const stat = fs.lstatSync(target);
+  if (stat.isSymbolicLink()) {
+    fs.unlinkSync(target);
+    return null;
+  }
+  const backupRoot = path.join(PRIMARY_SKILLS, '.backups');
+  const backup = path.join(backupRoot, `${label}-${timestamp()}`);
+  fs.mkdirSync(backupRoot, { recursive: true });
+  if (stat.isDirectory()) copyDir(target, backup);
+  else fs.copyFileSync(target, backup);
   fs.rmSync(target, { recursive: true, force: true });
   return backup;
 }
 
-function installSkill(name) {
-  const src = path.join(PKG_SKILLS, name);
-  const dst = path.join(CLAUDE_SKILLS, name);
-  if (!fs.existsSync(src)) throw new Error(`Missing packaged skill: ${src}`);
-  const backup = fs.existsSync(dst) ? backupAndRemove(dst, name) : null;
-  copyDir(src, dst);
+function has(command, args) {
+  const r = spawnSync(command, args, { stdio: 'ignore' });
+  return !r.error && r.status === 0;
+}
+
+function playwrightPath() {
+  for (const base of [TOOL_HOME, process.cwd()]) {
+    try { return require.resolve('playwright-core', { paths: [base] }); } catch { }
+  }
+  return null;
+}
+
+function ensurePlaywright() {
+  if (playwrightPath()) return true;
+  log('Installing playwright-core (drives Chrome to capture frames)…');
+  fs.mkdirSync(TOOL_HOME, { recursive: true });
+  const r = spawnSync('npm', ['install', '--prefix', TOOL_HOME, 'playwright-core@1', '--no-audit', '--no-fund', '--loglevel=error'],
+    { stdio: 'inherit', shell: process.platform === 'win32' });
+  if (r.status !== 0) log(`  Could not install it automatically. Run: npm install --prefix ${TOOL_HOME} playwright-core`);
+  return Boolean(playwrightPath());
+}
+
+function findBrowser() {
+  if (process.env.CHROME_PATH) return fs.existsSync(process.env.CHROME_PATH) ? process.env.CHROME_PATH : null;
+  const candidates = {
+    darwin: ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge', '/Applications/Chromium.app/Contents/MacOS/Chromium'],
+    linux: ['/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/usr/bin/microsoft-edge', '/usr/bin/chromium', '/usr/bin/chromium-browser', '/snap/bin/chromium'],
+    win32: [process.env.PROGRAMFILES, process.env['PROGRAMFILES(X86)'], process.env.LOCALAPPDATA].filter(Boolean)
+      .flatMap((p) => [path.join(p, 'Google/Chrome/Application/chrome.exe'), path.join(p, 'Microsoft/Edge/Application/msedge.exe')]),
+  }[process.platform] || [];
+  return candidates.find((p) => fs.existsSync(p)) || null;
+}
+
+function checkTools() {
+  const node = Number(process.versions.node.split('.')[0]) >= 18;
+  const python = has('python3', ['--version']);
+  const ffmpeg = has('ffmpeg', ['-version']) && has('ffprobe', ['-version']);
+  const playwright = Boolean(playwrightPath());
+  const browser = findBrowser();
+  log(`${node ? '✓' : '✗'} Node.js ${process.versions.node}${node ? '' : '  (need 18+)'}`);
+  log(`${python ? '✓' : '✗'} python3`);
+  log(`${ffmpeg ? '✓' : '✗'} ffmpeg / ffprobe${ffmpeg ? '' : '  (macOS: brew install ffmpeg)'}`);
+  log(`${playwright ? '✓' : '✗'} playwright-core${playwright ? '' : `  (npm install --prefix ${TOOL_HOME} playwright-core)`}`);
+  log(`${browser ? '✓' : '·'} Chrome / Edge / Chromium${browser ? ` ${browser}` : '  (install Google Chrome, or run: npx playwright install chromium; or set CHROME_PATH)'}`);
+  return node && python && ffmpeg && playwright;
+}
+
+function install() {
+  if (!fs.existsSync(SOURCE)) throw new Error(`Missing packaged skill: ${SOURCE}`);
+  fs.mkdirSync(PRIMARY_SKILLS, { recursive: true });
+  const skillBackup = backupAndRemove(DESTINATION, SKILL_NAME);
+  copyDir(SOURCE, DESTINATION);
   for (const file of ['LICENSE', 'NOTICE.md', 'CITATION.cff']) {
-    const packaged = path.join(PKG_ROOT, file);
-    if (fs.existsSync(packaged)) fs.copyFileSync(packaged, path.join(dst, file));
+    fs.copyFileSync(path.join(PKG_ROOT, file), path.join(DESTINATION, file));
   }
-  log(`  ✓ ${name} -> ${dst}`);
-  if (backup) log(`    backup: ${backup}`);
-}
-
-function linkCodexSkill(name) {
-  fs.mkdirSync(CODEX_SKILLS, { recursive: true });
-  const target = path.join(CLAUDE_SKILLS, name);
-  const link = path.join(CODEX_SKILLS, name);
-  if (fs.existsSync(link) || isDanglingLink(link)) {
-    if (fs.lstatSync(link).isSymbolicLink()) {
-      fs.unlinkSync(link);
-    } else {
-      const backup = backupAndRemove(link, `${name}-codex`);
-      if (backup) log(`    Codex backup: ${backup}`);
-    }
-  }
-  fs.symlinkSync(target, link);
-  log(`  ✓ ${name} linked -> ${link}`);
-}
-
-function isDanglingLink(p) {
-  try { return fs.lstatSync(p).isSymbolicLink(); } catch (_) { return false; }
+  fs.mkdirSync(COMPAT_SKILLS, { recursive: true });
+  const compatBackup = backupAndRemove(LINK, `${SKILL_NAME}-compat`);
+  fs.symlinkSync(DESTINATION, LINK);
+  const oldBackup = backupAndRemove(path.join(PRIMARY_SKILLS, OLD_NAME), `${OLD_NAME}-merged`);
+  backupAndRemove(path.join(COMPAT_SKILLS, OLD_NAME), `${OLD_NAME}-compat-merged`);
+  log(`✓ ${SKILL_NAME} installed`);
+  log('✓ Agent Skill registered');
+  if (skillBackup) log('  Existing Agent Skill backed up.');
+  if (compatBackup) log('  Existing Agent registration backed up.');
+  if (oldBackup) log(`  ${OLD_NAME} is now part of ${SKILL_NAME}; the old copy was backed up to ${oldBackup}`);
+  log('');
+  ensurePlaywright();
+  checkTools();
+  log('');
+  log('Restart your Agent so the Skill list reloads.');
 }
 
 function doctor() {
-  let ok = true;
-  for (const name of SKILLS) {
-    const claude = path.join(CLAUDE_SKILLS, name, 'SKILL.md');
-    const notice = path.join(CLAUDE_SKILLS, name, 'NOTICE.md');
-    const codex = path.join(CODEX_SKILLS, name);
-    const exists = fs.existsSync(claude);
-    const hasNotice = fs.existsSync(notice);
-    const linked = fs.existsSync(codex) && fs.lstatSync(codex).isSymbolicLink();
-    log(`${exists ? '✓' : '✗'} Claude skill: ${claude}`);
-    log(`${hasNotice ? '✓' : '✗'} Attribution notice: ${notice}`);
-    log(`${linked ? '✓' : '✗'} Codex symlink: ${codex}`);
-    ok = ok && exists && hasNotice && linked;
-  }
-  process.exit(ok ? 0 : 1);
+  const skill = path.join(DESTINATION, 'SKILL.md');
+  const notice = path.join(DESTINATION, 'NOTICE.md');
+  const linkOk = fs.existsSync(LINK) && fs.lstatSync(LINK).isSymbolicLink();
+  log(`${fs.existsSync(skill) ? '✓' : '✗'} Agent Skill installed`);
+  log(`${fs.existsSync(notice) ? '✓' : '✗'} Attribution notice present`);
+  log(`${linkOk ? '✓' : '✗'} Agent Skill registration present`);
+  const tools = checkTools();
+  process.exitCode = fs.existsSync(skill) && fs.existsSync(notice) && linkOk && tools ? 0 : 1;
 }
 
 function uninstall() {
-  for (const name of SKILLS) {
-    const claude = path.join(CLAUDE_SKILLS, name);
-    const codex = path.join(CODEX_SKILLS, name);
-    if (isDanglingLink(codex) || fs.existsSync(codex)) fs.rmSync(codex, { recursive: true, force: true });
-    if (fs.existsSync(claude)) {
-      const backup = backupAndRemove(claude, `${name}-removed`);
-      log(`  ✓ removed ${name}; backup: ${backup}`);
-    }
-  }
+  const linkBackup = backupAndRemove(LINK, `${SKILL_NAME}-compat-removed`);
+  const skillBackup = backupAndRemove(DESTINATION, `${SKILL_NAME}-removed`);
+  log(`✓ Removed ${SKILL_NAME}; backups are preserved.`);
+  if (skillBackup) log('  Removed Agent Skill backed up.');
+  if (linkBackup) log('  Removed Agent registration backed up.');
+  log(`  ${TOOL_HOME} (playwright-core) is kept; delete it by hand if you want.`);
 }
 
 function help() {
-  log('chengfeng-video-styles');
+  log('chengfeng-videocut-huamian');
   log('');
   log('Usage:');
-  log('  npx -y github:Agentchengfeng/chengfeng-video-styles install');
-  log('  npx -y github:Agentchengfeng/chengfeng-video-styles cpm install');
-  log('  chengfeng-video-styles install');
-  log('  chengfeng-video-styles-cpm install');
+  log('  npx -y github:Agentchengfeng/chengfeng-videocut-huamian install');
+  log('  npx -y github:Agentchengfeng/chengfeng-videocut-huamian doctor');
+  log('  (the old chengfeng-video-styles command installs this same package)');
   log('');
   log('Commands: install, doctor, uninstall, help');
-  log('For tests only: set CHENGFENG_VIDEO_STYLES_HOME=/tmp/some-home.');
+  log('For test-only installs: CHENGFENG_VIDEOCUT_HUAMIAN_HOME=/tmp/test-home');
 }
 
 function main() {
-  let args = process.argv.slice(2);
-  if (args[0] === 'cpm') args = args.slice(1);
-  const cmd = args[0] || 'install';
-  if (cmd === 'help' || cmd === '--help' || cmd === '-h') return help();
-  if (cmd === 'doctor') return doctor();
-  if (cmd === 'uninstall') return uninstall();
-  if (cmd !== 'install') {
-    log(`Unknown command: ${cmd}`);
-    help();
-    process.exit(1);
-  }
-  log('▶ Installing chengfeng-video-styles');
-  fs.mkdirSync(CLAUDE_SKILLS, { recursive: true });
-  for (const name of SKILLS) installSkill(name);
-  for (const name of SKILLS) linkCodexSkill(name);
-  log('');
-  log('Done. Open a new Claude Code / Codex session so the skill list reloads.');
+  let [command = 'install', subcommand] = process.argv.slice(2);
+  if (command === 'cpm') command = subcommand || 'install';
+  if (['help', '--help', '-h'].includes(command)) return help();
+  if (command === 'install') return install();
+  if (command === 'doctor') return doctor();
+  if (command === 'uninstall') return uninstall();
+  log(`Unknown command: ${command}`);
+  help();
+  process.exitCode = 1;
 }
 
 main();

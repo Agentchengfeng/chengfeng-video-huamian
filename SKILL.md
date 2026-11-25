@@ -1,12 +1,16 @@
 ---
-name: chengfeng-video-styles-installer
-description: 安装包说明。真正的 Skill 在 skills/chengfeng-video-styles/，用 `npx -y github:Agentchengfeng/chengfeng-video-styles install` 安装到 Claude Code 与 Codex。
+name: chengfeng-videocut-huamian
+description: Install the chengfeng-videocut-huamian (成峰出画面) skill for supported Agent environments.
 ---
 
-# chengfeng-video-styles 安装包
+# chengfeng-videocut-huamian
 
-- 安装：`npx -y github:Agentchengfeng/chengfeng-video-styles install`
-- 检查：`npx -y github:Agentchengfeng/chengfeng-video-styles doctor`
-- 卸载：`npx -y github:Agentchengfeng/chengfeng-video-styles uninstall`
+This is the installer package for `chengfeng-videocut-huamian`（成峰出画面）. It now also contains the 16 code-video styles that used to be published as `chengfeng-video-styles`.
 
-安装后 Skill 位于 `~/.claude/skills/chengfeng-video-styles`，并软链到 `~/.codex/skills/chengfeng-video-styles`。
+Install it with:
+
+```sh
+npx -y github:Agentchengfeng/chengfeng-videocut-huamian install
+```
+
+The installed skill draws explainer-video visuals as code from a shot list, times every shot to the voiceover's per-character timeline (from the Fish voiceover tool or the koubo cutting tool), renders frame by frame with headless Chrome, and outputs an mp4 with voice and subtitles. It can also render a silent preview of the opening with estimated timing before any voiceover exists. As a secondary option it carries 16 ready-made code-video styles for short silent 10-second explainers or for opening comparisons, picked by topic.
