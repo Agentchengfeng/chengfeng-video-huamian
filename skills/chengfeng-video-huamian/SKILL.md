@@ -1,5 +1,5 @@
 ---
-name: chengfeng-videocut-huamian
+name: chengfeng-video-huamian
 description: 出画面：照分镜稿用代码把讲解视频的画面一镜一镜画出来，按配音里每个字的时间卡点（念到哪露到哪），逐帧截图出 mp4，混进口播、带字幕，交出一条基础片；也能还没配音就按估的时间先出开头几秒看画风。另带 16 种现成的代码视频风格（皮影戏、白板手绘、时间线、数学可视化、漫画分格等），看题材挑来做开头对比，或做不配音的 10 秒知识短片（先各出 3 秒样片放进筛选页挑）。时间读 Fish 配音工具的时间线，或剪口播核对后的识别结果。要 Node.js、Chrome（或 Edge、Chromium）、ffmpeg、python3。用户说出画面、做画面、出片、做基础片、渲染、照分镜稿做动画、先出开头看看画风、用 XX 风格讲 XX、把这段话做成视频、出几个样片我挑、有哪些视频风格时使用。不写分镜稿、不配音、不加配乐和音效。
 ---
 
@@ -32,7 +32,7 @@ description: 出画面：照分镜稿用代码把讲解视频的画面一镜一�
 
 - Node.js 18 以上、`python3`、`ffmpeg` / `ffprobe`（macOS：`brew install node ffmpeg`）。
 - 一个 Chrome 系浏览器：本机装的 Google Chrome、Edge、Chromium 都行，脚本自己找；装在别处就设环境变量 `CHROME_PATH`。
-- `playwright-core`（开浏览器截图用）：安装器已经装进 `~/.chengfeng-videocut-huamian/`；没有就 `npm install --prefix ~/.chengfeng-videocut-huamian playwright-core`。
+- `playwright-core`（开浏览器截图用）：安装器已经装进 `~/.chengfeng-video-huamian/`；没有就 `npm install --prefix ~/.chengfeng-video-huamian playwright-core`。
 - 缺什么告诉用户怎么装，不替用户装。
 
 ## 1. 建目录

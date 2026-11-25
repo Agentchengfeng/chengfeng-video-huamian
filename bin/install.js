@@ -6,17 +6,17 @@ const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-const HOME = process.env.CHENGFENG_VIDEOCUT_HUAMIAN_HOME || os.homedir();
-// 0.4.0 起 chengfeng-video-styles 并进来了：装的时候把旧的备份后拿掉。
-const OLD_NAME = 'chengfeng-video-styles';
+const HOME = process.env.CHENGFENG_VIDEO_HUAMIAN_HOME || os.homedir();
+// 以前的名字：chengfeng-video-styles（0.3.0 以前）、chengfeng-videocut-huamian（0.4.0）。装的时候把旧的备份后拿掉。
+const OLD_NAMES = ['chengfeng-video-styles', 'chengfeng-videocut-huamian'];
 const PKG_ROOT = path.resolve(__dirname, '..');
-const SKILL_NAME = 'chengfeng-videocut-huamian';
+const SKILL_NAME = 'chengfeng-video-huamian';
 const SOURCE = path.join(PKG_ROOT, 'skills', SKILL_NAME);
 const PRIMARY_SKILLS = path.join(HOME, '.claude', 'skills');
 const COMPAT_SKILLS = path.join(HOME, '.codex', 'skills');
 const DESTINATION = path.join(PRIMARY_SKILLS, SKILL_NAME);
 const LINK = path.join(COMPAT_SKILLS, SKILL_NAME);
-const TOOL_HOME = path.join(HOME, '.chengfeng-videocut-huamian');
+const TOOL_HOME = path.join(HOME, '.chengfeng-video-huamian');
 
 const log = (message = '') => process.stdout.write(`${message}\n`);
 const timestamp = () => new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');
@@ -106,13 +106,17 @@ function install() {
   fs.mkdirSync(COMPAT_SKILLS, { recursive: true });
   const compatBackup = backupAndRemove(LINK, `${SKILL_NAME}-compat`);
   fs.symlinkSync(DESTINATION, LINK);
-  const oldBackup = backupAndRemove(path.join(PRIMARY_SKILLS, OLD_NAME), `${OLD_NAME}-merged`);
-  backupAndRemove(path.join(COMPAT_SKILLS, OLD_NAME), `${OLD_NAME}-compat-merged`);
+  const oldBackups = [];
+  for (const OLD_NAME of OLD_NAMES) {
+    const b = backupAndRemove(path.join(PRIMARY_SKILLS, OLD_NAME), `${OLD_NAME}-renamed`);
+    backupAndRemove(path.join(COMPAT_SKILLS, OLD_NAME), `${OLD_NAME}-compat-renamed`);
+    if (b) oldBackups.push(`${OLD_NAME} → ${b}`);
+  }
   log(`✓ ${SKILL_NAME} installed`);
   log('✓ Agent Skill registered');
   if (skillBackup) log('  Existing Agent Skill backed up.');
   if (compatBackup) log('  Existing Agent registration backed up.');
-  if (oldBackup) log(`  ${OLD_NAME} is now part of ${SKILL_NAME}; the old copy was backed up to ${oldBackup}`);
+  for (const line of oldBackups) log(`  Old name replaced by ${SKILL_NAME}; backup: ${line}`);
   log('');
   ensurePlaywright();
   checkTools();
@@ -141,15 +145,15 @@ function uninstall() {
 }
 
 function help() {
-  log('chengfeng-videocut-huamian');
+  log('chengfeng-video-huamian');
   log('');
   log('Usage:');
-  log('  npx -y github:Agentchengfeng/chengfeng-videocut-huamian install');
-  log('  npx -y github:Agentchengfeng/chengfeng-videocut-huamian doctor');
-  log('  (the old chengfeng-video-styles command installs this same package)');
+  log('  npx -y github:Agentchengfeng/chengfeng-video-huamian install');
+  log('  npx -y github:Agentchengfeng/chengfeng-video-huamian doctor');
+  log('  (the old chengfeng-video-styles / chengfeng-videocut-huamian commands install this same package)');
   log('');
   log('Commands: install, doctor, uninstall, help');
-  log('For test-only installs: CHENGFENG_VIDEOCUT_HUAMIAN_HOME=/tmp/test-home');
+  log('For test-only installs: CHENGFENG_VIDEO_HUAMIAN_HOME=/tmp/test-home');
 }
 
 function main() {

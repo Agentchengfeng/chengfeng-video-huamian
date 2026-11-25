@@ -41,11 +41,11 @@ const W = DATA.宽, H = DATA.高, FPS = +(fps参 || DATA.fps || 25), END = 长�
 if (!(END > 0)) 退出('片长不对：--长 要写大于 0 的秒数');
 
 function 找playwright() {
-  const 家 = process.env.CHENGFENG_VIDEOCUT_HUAMIAN_HOME || os.homedir();
-  for (const c of [process.env.PLAYWRIGHT_CORE, path.join(家, '.chengfeng-videocut-huamian', 'node_modules', 'playwright-core'), 'playwright-core', 'playwright']) {
+  const 家 = process.env.CHENGFENG_VIDEO_HUAMIAN_HOME || os.homedir();
+  for (const c of [process.env.PLAYWRIGHT_CORE, path.join(家, '.chengfeng-video-huamian', 'node_modules', 'playwright-core'), 'playwright-core', 'playwright']) {
     if (!c) continue; try { return require(c); } catch { }
   }
-  退出('找不到 playwright-core（用它开浏览器截图）。装一下：\n  npm install --prefix ~/.chengfeng-videocut-huamian playwright-core');
+  退出('找不到 playwright-core（用它开浏览器截图）。装一下：\n  npm install --prefix ~/.chengfeng-video-huamian playwright-core');
 }
 function 找浏览器() {
   if (process.env.CHROME_PATH) return process.env.CHROME_PATH;

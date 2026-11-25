@@ -1,10 +1,10 @@
-# 成峰出画面 chengfeng-videocut-huamian
+# 成峰出画面 chengfeng-video-huamian
 
 > 照分镜稿，让 AI 用代码把讲解视频的画面一镜一镜画出来：念到哪个词，哪个东西才出来；一帧一帧截图出片，混进口播、带上字幕。
 
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/version-0.4.0-green)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/version-0.4.1-green)
 
-> 原来的 **chengfeng-video-styles**（16 种代码视频风格）已经并进来，见下面“16 种风格”。旧网址、旧安装命令都会自动跳到这里。
+> 原来的 **chengfeng-video-styles**（16 种代码视频风格）已经并进来，见下面“16 种风格”。旧网址、旧安装命令（chengfeng-video-styles、chengfeng-videocut-huamian）都会自动跳到这里。
 
 用 AI 做讲解视频，难的是画面：要跟着口播走，念到哪露到哪，还要能一镜一镜改。
 
@@ -21,16 +21,16 @@
 最简单的方式：把这句发给你的 AI，它会照着命令装好：
 
 ```text
-帮我运行这条命令，安装成峰出画面 Skill：npx -y github:Agentchengfeng/chengfeng-videocut-huamian install
+帮我运行这条命令，安装成峰出画面 Skill：npx -y github:Agentchengfeng/chengfeng-video-huamian install
 ```
 
 自己在终端装也行：
 
 ```sh
-npx -y github:Agentchengfeng/chengfeng-videocut-huamian install
+npx -y github:Agentchengfeng/chengfeng-video-huamian install
 ```
 
-安装器会顺手装上 `playwright-core`（开浏览器截图用），放在 `~/.chengfeng-videocut-huamian/`。装好后重启 Agent，让它重新加载 Skill 列表。
+安装器会顺手装上 `playwright-core`（开浏览器截图用），放在 `~/.chengfeng-video-huamian/`。装好后重启 Agent，让它重新加载 Skill 列表。
 
 ## 怎么用
 
@@ -75,7 +75,7 @@ npx -y github:Agentchengfeng/chengfeng-videocut-huamian install
 有哪些视频风格？
 ```
 
-每种风格的画面写法、看场景怎么挑，见 [`16种风格.md`](skills/chengfeng-videocut-huamian/references/16种风格.md)。16 小黑手绘关联 [chengfeng-videocut-xiaohei](https://github.com/Agentchengfeng/chengfeng-videocut-xiaohei)，要另外装。
+每种风格的画面写法、看场景怎么挑，见 [`16种风格.md`](skills/chengfeng-video-huamian/references/16种风格.md)。16 小黑手绘关联 [chengfeng-videocut-xiaohei](https://github.com/Agentchengfeng/chengfeng-videocut-xiaohei)，要另外装。
 
 ## 出来什么
 
@@ -88,7 +88,7 @@ npx -y github:Agentchengfeng/chengfeng-videocut-huamian install
 
 ## 画面规矩
 
-做的时候照着 [画面规矩](skills/chengfeng-videocut-huamian/references/画面规矩.md) 来，都是作者审片时一条条改出来的。比如：
+做的时候照着 [画面规矩](skills/chengfeng-video-huamian/references/画面规矩.md) 来，都是作者审片时一条条改出来的。比如：
 
 - 念到哪露到哪：没念到的不出现，念过的压暗。
 - 3 秒看懂：不懂英文的观众刷到这 3 秒也要看得懂。
@@ -104,8 +104,8 @@ npx -y github:Agentchengfeng/chengfeng-videocut-huamian install
 ## 检查与卸载
 
 ```sh
-npx -y github:Agentchengfeng/chengfeng-videocut-huamian doctor
-npx -y github:Agentchengfeng/chengfeng-videocut-huamian uninstall
+npx -y github:Agentchengfeng/chengfeng-video-huamian doctor
+npx -y github:Agentchengfeng/chengfeng-video-huamian uninstall
 ```
 
 `doctor` 会查 Skill 装好没有，Node.js、python3、ffmpeg、playwright-core 和浏览器在不在。包里只有说明文件、模板和脚本，不含任何个人数据。
@@ -113,8 +113,8 @@ npx -y github:Agentchengfeng/chengfeng-videocut-huamian uninstall
 ## 脚本也能单独用
 
 ```sh
-S=~/.claude/skills/chengfeng-videocut-huamian/scripts
-cp -R ~/.claude/skills/chengfeng-videocut-huamian/assets/模板 我的片-画面
+S=~/.claude/skills/chengfeng-video-huamian/scripts
+cp -R ~/.claude/skills/chengfeng-video-huamian/assets/模板 我的片-画面
 python3 $S/对时.py 我的片-画面 口播稿-配音/时间线.json --口播 口播稿-配音/口播.wav
 node $S/出片.cjs 我的片-画面 截 我的片-画面/看 每 2.5
 node $S/出片.cjs 我的片-画面 0 end 成片.mp4 --口播 口播稿-配音/口播.wav
@@ -125,13 +125,13 @@ node $S/出片.cjs 样片/03.html 0 end 样片/03.mp4 --长 3 --定格 0   # 不
 ## 仓库结构
 
 ```text
-chengfeng-videocut-huamian/
+chengfeng-video-huamian/
 ├── SKILL.md
 ├── LICENSE / NOTICE.md / CITATION.cff
 ├── package.json
 ├── bin/install.js
 ├── assets/preview-tea.jpg       # README 预览图
-└── skills/chengfeng-videocut-huamian/
+└── skills/chengfeng-video-huamian/
     ├── SKILL.md
     ├── 更新日志.md
     ├── agents/openai.yaml
